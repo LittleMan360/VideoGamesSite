@@ -4,7 +4,13 @@ namespace VideoGamesSite.Controllers
 {
     public class ListsController : Controller
     {
-        // /Lists/Top10
+        // GET /Lists/Top10  (already works)
         public IActionResult Top10() => View();
+
+        // GET /Lists/NowPlaying
+        public IActionResult NowPlaying() => View();
+
+        // GET /Lists/Backlog
+        public IActionResult Backlog() => View();
     }
 }
