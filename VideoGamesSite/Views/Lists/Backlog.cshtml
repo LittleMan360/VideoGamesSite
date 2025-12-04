@@ -1,8 +1,331 @@
+ï»¿@using System.Text.Json
+
 @{
     ViewData["Title"] = "Backlog";
+
+    // Starter data to populate the backlog page.
+    var seedBacklog = new[]
+    {
+        new
+        {
+            Id = 1,
+            Title = "Assassin's Creed Mirage",
+            Platform = "PS5",
+            Status = "Queued",
+            Price = 49.99,
+            Link = "https://www.playstation.com/en-us/games/assassins-creed-mirage/",
+            Note = "Shorter stealth-first run; aiming for completionist in Baghdad.",
+            Eta = "This week",
+            Comments = new[] { "Prioritize dagger/throwing knife upgrades." }
+        },
+        new
+        {
+            Id = 2,
+            Title = "Assassin's Creed Valhalla",
+            Platform = "Xbox",
+            Status = "In Progress",
+            Price = 59.99,
+            Link = "https://www.xbox.com/en-US/games/store/assassins-creed-valhalla/9NTTVTP0J8X4",
+            Note = "Mainline the story arcs; DLCs after England is stable.",
+            Eta = "Weekend",
+            Comments = new[] { "Try dual spears build.", "Raid for supplies before new settlement upgrades." }
+        },
+        new
+        {
+            Id = 3,
+            Title = "Assassin's Creed Odyssey",
+            Platform = "PC",
+            Status = "Backlog",
+            Price = 39.99,
+            Link = "https://store.steampowered.com/app/812140/Assassins_Creed_Odyssey/",
+            Note = "Complete Kassandra storyline; photo mode island tour.",
+            Eta = "Next month",
+            Comments = new[] { "Get Arena gear early.", "Keep engraving materials stocked." }
+        },
+        new
+        {
+            Id = 4,
+            Title = "Assassin's Creed Origins",
+            Platform = "PC",
+            Status = "Backlog",
+            Price = 29.99,
+            Link = "https://store.steampowered.com/app/582160/Assassins_Creed_Origins/",
+            Note = "Warm-up before Odyssey; focus on hidden blades and bows.",
+            Eta = "Travel window",
+            Comments = new[] { "Unlock Sinai fast travel first.", "Test photo mode sunsets in Siwa." }
+        }
+    };
+
+    var seedJson = JsonSerializer.Serialize(seedBacklog, new JsonSerializerOptions
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    });
 }
-<h1>Backlog</h1>
-<ul class="list-group">
-    <li class="list-group-item">Game A — why I want to play</li>
-    <li class="list-group-item">Game B — ETA and platform</li>
-</ul>
+
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <div>
+        <h1 class="fw-bold mb-1">Backlog</h1>
+        <p class="text-secondary mb-0">Drag to reorder, add comments, and keep price/link handy.</p>
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+        <span class="badge text-bg-light border">Drag to rearrange</span>
+        <span class="badge text-bg-secondary">Inline comments</span>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body">
+                <h5 class="fw-semibold mb-2">Add to backlog</h5>
+                <p class="text-secondary small mb-3">Capture a title with platform, price, link, and why it belongs here.</p>
+                <form id="addBacklogForm" novalidate>
+                    <div class="mb-3">
+                        <label class="form-label">Title</label>
+                        <input class="form-control" name="title" placeholder="Game title" required />
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label">Platform</label>
+                            <select class="form-select" name="platform">
+                                <option value="PC">PC</option>
+                                <option value="PS5">PS5</option>
+                                <option value="Xbox">Xbox</option>
+                                <option value="Switch">Switch</option>
+                                <option value="Steam Deck">Steam Deck</option>
+                                <option value="TBD">TBD</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Price (USD)</label>
+                            <input class="form-control" name="price" type="number" step="0.01" min="0" placeholder="59.99" />
+                        </div>
+                    </div>
+                    <div class="mb-3 mt-2">
+                        <label class="form-label">Store link</label>
+                        <input class="form-control" name="link" type="url" placeholder="https://store..." />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">ETA / window</label>
+                        <input class="form-control" name="eta" placeholder="Weekend, next month, holiday break..." />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Why it's on the list</label>
+                        <textarea class="form-control" name="note" rows="2" placeholder="Boss rush itch, co-op night, story-first run..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Add to backlog</button>
+                </form>
+            </div>
+        </div>
+        <div class="alert alert-info mt-3 mb-0 small">
+            Tip: comments stick to each card, and you can drag the handle to change priority.
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="fw-semibold mb-0">Current order</h5>
+            <span class="text-secondary small">Drag cards to reorder; comments and stats update automatically.</span>
+        </div>
+        <ul class="list-unstyled backlog-list" id="backlogItems"></ul>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const seedBacklog = @Html.Raw(seedJson);
+            const backlogList = document.getElementById("backlogItems");
+            const addForm = document.getElementById("addBacklogForm");
+
+            let backlogItems = seedBacklog.map((item, index) => ({
+                ...item,
+                order: index + 1,
+                comments: Array.isArray(item.comments) ? [...item.comments] : []
+            }));
+
+            let draggingId = null;
+
+            const fmtPrice = (price) => {
+                if (!price || Number.isNaN(price)) {
+                    return "TBD";
+                }
+                return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(price);
+            };
+
+            const updateStats = () => {
+                const countEl = document.getElementById("backlogCount");
+                const nextEl = document.getElementById("backlogNext");
+                const spendEl = document.getElementById("backlogSpend");
+                const platformsEl = document.getElementById("backlogPlatforms");
+
+                if (countEl) countEl.textContent = backlogItems.length.toString();
+                if (nextEl) nextEl.textContent = backlogItems[0]?.title ?? "-";
+                if (spendEl) {
+                    const spend = backlogItems.reduce((sum, item) => sum + (Number(item.price) || 0), 0);
+                    spendEl.textContent = fmtPrice(spend);
+                }
+                if (platformsEl) {
+                    const platforms = new Set(backlogItems.map(i => i.platform));
+                    platformsEl.textContent = platforms.size.toString();
+                }
+            };
+
+            const renderComments = (comments) => {
+                if (!comments?.length) {
+                    return "<li class=\"text-secondary small\">No comments yet.</li>";
+                }
+                return comments
+                    .slice(0, 3)
+                    .map(c => `<li class="backlog-comment">${c}</li>`)
+                    .join("");
+            };
+
+            const renderList = () => {
+                backlogList.innerHTML = "";
+                backlogItems.forEach((item, index) => {
+                    item.order = index + 1;
+
+                    const li = document.createElement("li");
+                    li.className = "backlog-card shadow-sm";
+                    li.setAttribute("data-id", item.id);
+                    li.draggable = true;
+
+                    li.innerHTML = `
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="backlog-handle" aria-hidden="true">â†•</div>
+                            <div class="flex-fill">
+                                <div class="d-flex justify-content-between gap-3 flex-wrap">
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                                            <a href="${item.link || "#"}" class="backlog-title" target="_blank" rel="noopener">
+                                                ${item.title}
+                                            </a>
+                                            <span class="badge text-bg-light border">${item.platform}</span>
+                                            <span class="badge text-bg-primary">#${item.order}</span>
+                                        </div>
+                                        <div class="backlog-tags mt-2">
+                                            <span class="badge rounded-pill text-bg-success">${fmtPrice(Number(item.price))}</span>
+                                            <span class="badge rounded-pill text-bg-secondary">${item.status}</span>
+                                            <span class="badge rounded-pill text-bg-warning text-dark">${item.eta ?? "Soon"}</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-end d-flex flex-column align-items-end gap-2">
+                                        <button type="button" class="btn btn-outline-danger btn-sm backlog-remove" data-id="${item.id}">Remove</button>
+                                        <div>
+                                            <small class="text-secondary">Price</small>
+                                            <div class="fw-semibold">${fmtPrice(Number(item.price))}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="text-secondary mb-2 mt-2">${item.note ?? ""}</p>
+                                <div class="backlog-meta mb-2">
+                                    <span class="text-secondary small">${item.comments.length} comment${item.comments.length === 1 ? "" : "s"}</span>
+                                    <span class="text-secondary small">Link: <a href="${item.link || "#"}" target="_blank" rel="noopener">${item.link ? "Open" : "None"}</a></span>
+                                </div>
+                                <ul class="list-unstyled mb-2 backlog-comments">
+                                    ${renderComments(item.comments)}
+                                </ul>
+                                <form class="comment-form" data-id="${item.id}">
+                                    <div class="input-group input-group-sm">
+                                        <input type="text" class="form-control" placeholder="Add a quick comment" maxlength="120" />
+                                        <button class="btn btn-outline-primary" type="submit">Add</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    `;
+
+                    backlogList.appendChild(li);
+                });
+
+                updateStats();
+            };
+
+            const syncOrderFromDom = () => {
+                const ids = Array.from(backlogList.children).map((el) => Number(el.dataset.id));
+                backlogItems.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id));
+                renderList();
+            };
+
+            backlogList.addEventListener("dragstart", (e) => {
+                const card = e.target.closest(".backlog-card");
+                if (!card) return;
+                draggingId = Number(card.dataset.id);
+                card.classList.add("dragging");
+                e.dataTransfer.effectAllowed = "move";
+            });
+
+            backlogList.addEventListener("dragover", (e) => {
+                e.preventDefault();
+                const targetCard = e.target.closest(".backlog-card");
+                const draggingCard = backlogList.querySelector(".dragging");
+                if (!targetCard || !draggingCard || targetCard === draggingCard) return;
+                const targetRect = targetCard.getBoundingClientRect();
+                const shouldInsertAfter = e.clientY > targetRect.top + targetRect.height / 2;
+                backlogList.insertBefore(draggingCard, shouldInsertAfter ? targetCard.nextSibling : targetCard);
+            });
+
+            backlogList.addEventListener("dragend", () => {
+                const draggingCard = backlogList.querySelector(".dragging");
+                draggingCard?.classList.remove("dragging");
+                draggingId = null;
+                syncOrderFromDom();
+            });
+
+            backlogList.addEventListener("submit", (e) => {
+                const form = e.target.closest(".comment-form");
+                if (!form) return;
+                e.preventDefault();
+                const input = form.querySelector("input");
+                const text = input.value.trim();
+                if (!text) return;
+                const id = Number(form.dataset.id);
+                const item = backlogItems.find((b) => b.id === id);
+                if (!item) return;
+                item.comments.unshift(text);
+                input.value = "";
+                renderList();
+            });
+
+            backlogList.addEventListener("click", (e) => {
+                const btn = e.target.closest(".backlog-remove");
+                if (!btn) return;
+                const id = Number(btn.dataset.id);
+                backlogItems = backlogItems.filter(b => b.id !== id);
+                renderList();
+            });
+
+            addForm.addEventListener("submit", (e) => {
+                e.preventDefault();
+                const data = new FormData(addForm);
+                const title = (data.get("title") || "").toString().trim();
+                if (!title) {
+                    addForm.classList.add("was-validated");
+                    return;
+                }
+
+                const newItem = {
+                    id: Date.now(),
+                    title,
+                    platform: (data.get("platform") || "TBD").toString(),
+                    status: "New",
+                    price: parseFloat((data.get("price") || "").toString()),
+                    link: (data.get("link") || "").toString(),
+                    note: (data.get("note") || "").toString(),
+                    eta: (data.get("eta") || "").toString(),
+                    comments: []
+                };
+
+                backlogItems.unshift(newItem);
+                addForm.reset();
+                addForm.classList.remove("was-validated");
+                renderList();
+            });
+
+            renderList();
+        })();
+    </script>
+}
+
+
+
