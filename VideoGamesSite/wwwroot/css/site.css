@@ -20,3 +20,110 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+.backlog-hero {
+  background: radial-gradient(circle at 20% 20%, rgba(37, 140, 251, 0.08), transparent 35%),
+    radial-gradient(circle at 80% 0%, rgba(111, 66, 193, 0.08), transparent 30%),
+    linear-gradient(135deg, #f8fafc 0%, #ffffff 60%);
+  border: 1px solid #e6e9ef;
+  border-radius: 18px;
+  padding: 28px 24px;
+  box-shadow: 0 16px 40px -32px rgba(15, 23, 42, 0.5);
+}
+
+.backlog-stat {
+  background: #ffffff;
+  border: 1px solid #e6e9ef;
+  border-radius: 14px;
+  padding: 12px 16px;
+  box-shadow: 0 10px 30px -28px rgba(0, 0, 0, 0.6);
+}
+
+.backlog-stat .label {
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-size: 0.75rem;
+  color: #6c757d;
+}
+
+.backlog-stat .value {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.backlog-list {
+  margin: 0;
+  padding: 0;
+}
+
+.backlog-card {
+  background: #ffffff;
+  border: 1px solid #e6e9ef;
+  border-radius: 16px;
+  padding: 16px 18px;
+  margin-bottom: 12px;
+  cursor: grab;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.backlog-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 40px -28px rgba(17, 24, 39, 0.4);
+}
+
+.backlog-card.dragging {
+  opacity: 0.85;
+  box-shadow: 0 22px 48px -28px rgba(0, 0, 0, 0.4);
+}
+
+.backlog-handle {
+  font-size: 1.2rem;
+  color: #6c757d;
+  background: #f3f4f6;
+  border-radius: 12px;
+  padding: 6px 10px;
+  line-height: 1;
+}
+
+.backlog-tags .badge {
+  font-weight: 600;
+}
+
+.backlog-title {
+  color: #0d6efd;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.backlog-title:hover {
+  text-decoration: underline;
+}
+
+.backlog-meta {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.backlog-comments {
+  margin: 0;
+  padding-left: 0;
+}
+
+.backlog-comment {
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 6px 10px;
+  border: 1px dashed #e6e9ef;
+}
+
+.backlog-comments li + li {
+  margin-top: 6px;
+}
+
+@media (max-width: 768px) {
+  .backlog-card {
+    padding: 14px;
+  }
+}
