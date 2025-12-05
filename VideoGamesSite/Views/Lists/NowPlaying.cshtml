@@ -1,8 +1,143 @@
+﻿@model IList<VideoGamesSite.Models.NowPlayingItem>
+
 @{
     ViewData["Title"] = "Now Playing";
 }
+
 <h1>Now Playing</h1>
-<ul class="list-group">
-    <li class="list-group-item">Game 1 � first impressions and goals</li>
-    <li class="list-group-item">Game 2 � what I�m testing/learning</li>
-</ul>
+<p class="text-secondary">
+    Track the games I’m currently playing, what I’m focusing on, and how far along I am.
+</p>
+
+<div class="row g-4">
+    <!-- Active games -->
+    <div class="col-lg-7">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h2 class="h5 mb-0">Active Games</h2>
+            <span class="small text-secondary">
+                Currently playing: <strong>@Model.Count</strong>
+            </span>
+        </div>
+
+        @if (!Model.Any())
+        {
+            <p class="text-secondary">No games added yet. Use the form on the right to add one.</p>
+        }
+        else
+        {
+            <ul class="list-group">
+                @foreach (var game in Model)
+                {
+                    <li class="list-group-item">
+                        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                            <div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <strong>@game.Title</strong>
+                                    <span class="badge bg-secondary">@game.Platform</span>
+                                </div>
+                                <p class="mb-1 text-secondary small">
+                                    @(!string.IsNullOrWhiteSpace(game.Focus)
+                                        ? game.Focus
+                                        : "No specific focus set yet.")
+                                </p>
+                                <div class="small text-secondary">
+                                    Progress: <strong>@game.Progress%</strong>
+                                </div>
+                            </div>
+
+                            <div class="d-flex flex-column align-items-end gap-2">
+
+                                <!-- Update progress -->
+                                <form asp-action="UpdateProgress" method="post"
+                                      class="d-flex flex-column align-items-end gap-1">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@game.Id" />
+                                    <input type="range"
+                                           name="progress"
+                                           class="form-range"
+                                           min="0"
+                                           max="100"
+                                           value="@game.Progress" />
+                                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                                        Update
+                                    </button>
+                                </form>
+
+                                <!-- Move up / down -->
+                                <form asp-action="MoveNowPlaying" method="post"
+                                      class="d-flex gap-1">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@game.Id" />
+                                    <button type="submit"
+                                            name="direction"
+                                            value="up"
+                                            class="btn btn-sm btn-outline-secondary">
+                                        ↑
+                                    </button>
+                                    <button type="submit"
+                                            name="direction"
+                                            value="down"
+                                            class="btn btn-sm btn-outline-secondary">
+                                        ↓
+                                    </button>
+                                </form>
+
+                                <!-- Remove -->
+                                <form asp-action="RemoveNowPlaying" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@game.Id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        Remove
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+
+    <!-- Add a new now-playing game -->
+    <div class="col-lg-5">
+        <h2 class="h5">Add a Game</h2>
+        <p class="small text-secondary">
+            Add a game you’re actively playing, including your focus and estimated progress.
+        </p>
+
+        <form asp-action="AddNowPlaying" method="post" novalidate>
+            @Html.AntiForgeryToken()
+
+            <div class="mb-3">
+                <label class="form-label">Title</label>
+                <input class="form-control" name="title" required />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Platform</label>
+                <select class="form-select" name="platform">
+                    <option value="PC">PC</option>
+                    <option value="PS5">PS5</option>
+                    <option value="Xbox">Xbox</option>
+                    <option value="Switch">Switch</option>
+                    <option value="Steam Deck">Steam Deck</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Current focus</label>
+                <input class="form-control"
+                       name="focus"
+                       placeholder="Story, builds, co-op, ranking up, etc." />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Progress (%)</label>
+                <input class="form-control" name="progress" type="number" min="0" max="100" value="0" />
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">Add to Now Playing</button>
+        </form>
+    </div>
+</div>
