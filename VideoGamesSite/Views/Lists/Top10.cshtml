@@ -1,37 +1,163 @@
 @{
     ViewData["Title"] = "Top 10 Favorite Games";
 }
-<h1>Top 10 Favorite Games — Dalton Towe</h1>
 
-<ol class="list-group list-group-numbered">
-    <li class="list-group-item d-flex justify-content-between align-items-center">
-        Halo: Reach <span class="badge bg-primary rounded-pill">FPS</span>
-    </li>
-    <li class="list-group-item d-flex justify-content-between align-items-center">
-        Halo 3 <span class="badge bg-primary rounded-pill">FPS</span>
-    </li>
-    <li class="list-group-item d-flex justify-content-between align-items-center">
-        Gears of War 2 <span class="badge bg-primary rounded-pill">TPS</span>
-    </li>
-    <li class="list-group-item d-flex justify-content-between align-items-center">
-        Borderlands 2 <span class="badge bg-primary rounded-pill">Looter Shooter</span>
-    </li>
-    <li class="list-group-item d-flex justify-content-between align-items-center">
-        Call of Duty: Black Ops II <span class="badge bg-primary rounded-pill">FPS</span>
-    </li>
-    <li class="list-group-item d-flex justify-content-between align-items-center">
-        The Witcher 3: Wild Hunt <span class="badge bg-primary rounded-pill">RPG</span>
-    </li>
-    <li class="list-group-item d-flex justify-content-between align-items-center">
-        Baldur’s Gate 3 <span class="badge bg-primary rounded-pill">CRPG</span>
-    </li>
-    <li class="list-group-item d-flex justify-content-between align-items-center">
-        Elden Ring <span class="badge bg-primary rounded-pill">Action RPG</span>
-    </li>
-    <li class="list-group-item d-flex justify-content-between align-items-center">
-        RimWorld <span class="badge bg-primary rounded-pill">Colony Sim</span>
-    </li>
-    <li class="list-group-item d-flex justify-content-between align-items-center">
-        Psychonauts <span class="badge bg-primary rounded-pill">Platformer</span>
-    </li>
-</ol>
+<h1>Top 10 Favorite Games</h1>
+<p class="text-secondary">
+    Manage a dynamic Top 10 list: add games, remove them, and move them up or down to change their ranking.
+</p>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <h2 class="h5">Current Top 10</h2>
+        <p class="small text-secondary mb-2">
+            At most 10 games. Use the arrow buttons to reorder.
+        </p>
+
+        <ol id="top10List" class="list-group list-group-numbered mb-3">
+        </ol>
+
+        <div class="small text-secondary">
+            Count: <strong id="top10Count">0</strong> / 10
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <h2 class="h5">Add a Game</h2>
+        <p class="small text-secondary">
+            Add a new game with a short label/tag (genre, type, or role in your list).
+        </p>
+
+        <form id="addTop10Form" novalidate>
+            <div class="mb-3">
+                <label class="form-label">Title</label>
+                <input class="form-control" name="title" placeholder="Game title" required />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Tag / Genre</label>
+                <input class="form-control" name="tag" placeholder="FPS, RPG, Co-op, etc." />
+            </div>
+            <button type="submit" class="btn btn-primary w-100">
+                Add to Top 10
+            </button>
+            <div class="form-text mt-1">
+                If the list is already full, the new game won’t be added until you remove one.
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const maxSize = 10;
+
+            let top10 = [
+                { id: 1, title: "Halo: Reach", tag: "FPS" },
+                { id: 2, title: "Halo 3", tag: "FPS" },
+                { id: 3, title: "Gears of War 2", tag: "TPS" },
+                { id: 4, title: "Borderlands 2", tag: "Looter Shooter" },
+                { id: 5, title: "Call of Duty: Black Ops II", tag: "FPS" },
+                { id: 6, title: "The Witcher 3: Wild Hunt", tag: "RPG" },
+                { id: 7, title: "Baldur\u2019s Gate 3", tag: "CRPG" },
+                { id: 8, title: "Elden Ring", tag: "Action RPG" },
+                { id: 9, title: "RimWorld", tag: "Colony Sim" },
+                { id: 10, title: "Psychonauts", tag: "Platformer" }
+            ];
+
+            const listEl = document.getElementById("top10List");
+            const countEl = document.getElementById("top10Count");
+            const formEl = document.getElementById("addTop10Form");
+
+            const render = () => {
+                listEl.innerHTML = "";
+
+                top10.forEach((game, index) => {
+                    const li = document.createElement("li");
+                    li.className = "list-group-item d-flex justify-content-between align-items-center gap-2 flex-wrap";
+
+                    li.innerHTML = `
+                        <div>
+                            <strong>${game.title}</strong>
+                            ${game.tag
+                                ? `<span class="badge bg-primary rounded-pill ms-2">${game.tag}</span>`
+                                : ""}
+                        </div>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-outline-secondary" data-action="up" data-id="${game.id}">&#8593;</button>
+                            <button type="button" class="btn btn-outline-secondary" data-action="down" data-id="${game.id}">&#8595;</button>
+                            <button type="button" class="btn btn-outline-danger" data-action="remove" data-id="${game.id}">Remove</button>
+                        </div>
+                    `;
+
+                    listEl.appendChild(li);
+                });
+
+                if (countEl) {
+                    countEl.textContent = top10.length.toString();
+                }
+            };
+
+            const move = (id, direction) => {
+                const index = top10.findIndex(g => g.id === id);
+                if (index === -1) return;
+
+                const newIndex = direction === "up" ? index - 1 : index + 1;
+                if (newIndex < 0 || newIndex >= top10.length) return;
+
+                const tmp = top10[index];
+                top10[index] = top10[newIndex];
+                top10[newIndex] = tmp;
+                render();
+            };
+
+            const removeGame = (id) => {
+                top10 = top10.filter(g => g.id !== id);
+                render();
+            };
+
+            listEl.addEventListener("click", (e) => {
+                const btn = e.target.closest("button[data-action]");
+                if (!btn) return;
+
+                const action = btn.getAttribute("data-action");
+                const id = Number(btn.getAttribute("data-id"));
+
+                if (action === "up") move(id, "up");
+                else if (action === "down") move(id, "down");
+                else if (action === "remove") removeGame(id);
+            });
+
+            formEl.addEventListener("submit", (e) => {
+                e.preventDefault();
+
+                const data = new FormData(formEl);
+                const title = (data.get("title") || "").toString().trim();
+                const tag = (data.get("tag") || "").toString().trim();
+
+                if (!title) {
+                    formEl.classList.add("was-validated");
+                    return;
+                }
+
+                if (top10.length >= maxSize) {
+                    alert("The Top 10 list is full. Remove a game before adding another.");
+                    return;
+                }
+
+                const newGame = {
+                    id: Date.now(),
+                    title,
+                    tag
+                };
+
+                top10.push(newGame);
+                formEl.reset();
+                formEl.classList.remove("was-validated");
+                render();
+            });
+
+            render();
+        })();
+    </script>
+}
