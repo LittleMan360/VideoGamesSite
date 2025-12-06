@@ -16,7 +16,104 @@ namespace VideoGamesSite.Controllers
         }
 
         // TOP 10 
-        public IActionResult Top10() => View();
+        public IActionResult Top10()
+        {
+            var model = _db.TopGames
+                .OrderBy(x => x.Rank)
+                .ThenBy(x => x.Id)
+                .ToList();
+
+            return View(model);
+        }
+
+        // POST: /Lists/AddTopGame
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult AddTopGame(string title, string? tag)
+        {
+            // Enforce max 10
+            var count = _db.TopGames.Count();
+            if (count >= 10 || string.IsNullOrWhiteSpace(title))
+            {
+                return RedirectToAction(nameof(Top10));
+            }
+
+            var maxRank = count > 0 ? _db.TopGames.Max(x => x.Rank) : 0;
+
+            var game = new TopGame
+            {
+                Title = title.Trim(),
+                Tag = string.IsNullOrWhiteSpace(tag) ? null : tag.Trim(),
+                Rank = maxRank + 1
+            };
+
+            _db.TopGames.Add(game);
+            _db.SaveChanges();
+
+            return RedirectToAction(nameof(Top10));
+        }
+
+        // POST: /Lists/RemoveTopGame
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult RemoveTopGame(int id)
+        {
+            var game = _db.TopGames.FirstOrDefault(x => x.Id == id);
+            if (game != null)
+            {
+                _db.TopGames.Remove(game);
+                _db.SaveChanges();
+
+                // Normalize ranks after removal
+                var remaining = _db.TopGames
+                    .OrderBy(x => x.Rank)
+                    .ThenBy(x => x.Id)
+                    .ToList();
+
+                for (int i = 0; i < remaining.Count; i++)
+                {
+                    remaining[i].Rank = i + 1;
+                }
+
+                _db.SaveChanges();
+            }
+
+            return RedirectToAction(nameof(Top10));
+        }
+
+        // POST: /Lists/MoveTopGame
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult MoveTopGame(int id, string direction)
+        {
+            var items = _db.TopGames
+                .OrderBy(x => x.Rank)
+                .ThenBy(x => x.Id)
+                .ToList();
+
+            var index = items.FindIndex(x => x.Id == id);
+            if (index == -1)
+            {
+                return RedirectToAction(nameof(Top10));
+            }
+
+            var newIndex = direction == "up" ? index - 1 : index + 1;
+            if (newIndex < 0 || newIndex >= items.Count)
+            {
+                return RedirectToAction(nameof(Top10));
+            }
+
+            var current = items[index];
+            var target = items[newIndex];
+
+            var tempRank = current.Rank;
+            current.Rank = target.Rank;
+            target.Rank = tempRank;
+
+            _db.SaveChanges();
+
+            return RedirectToAction(nameof(Top10));
+        }
 
         // NOW PLAYING 
         public IActionResult NowPlaying()

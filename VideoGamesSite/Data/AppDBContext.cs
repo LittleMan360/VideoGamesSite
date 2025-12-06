@@ -8,8 +8,8 @@ namespace VideoGamesSite.Data
         public DbSet<Game> Games => Set<Game>();
         public DbSet<Platform> Platforms => Set<Platform>();
 
-        // 🔹 Add this:
         public DbSet<NowPlayingItem> NowPlayingItems => Set<NowPlayingItem>();
+        public DbSet<TopGame> TopGames => Set<TopGame>();
 
         protected override void OnModelCreating(ModelBuilder b)
         {
@@ -22,7 +22,7 @@ namespace VideoGamesSite.Data
                 new Platform { Id = 3, Name = "Xbox" },
                 new Platform { Id = 4, Name = "Switch" }
             );
-            
+
             // Games
             b.Entity<Game>().HasData(
                 new Game { Id = 1, Title = "Elden Ring", Genre = "Action RPG", ReleaseYear = 2022, HoursPlayed = 120, PlatformId = 1 },
@@ -49,6 +49,19 @@ namespace VideoGamesSite.Data
                     Progress = 0,
                     DisplayOrder = 2
                 }
+            );
+
+            b.Entity<TopGame>().HasData(
+                new TopGame { Id = 1, Title = "Halo: Reach", Tag = "FPS", Rank = 1 },
+                new TopGame { Id = 2, Title = "Halo 3", Tag = "FPS", Rank = 2 },
+                new TopGame { Id = 3, Title = "Gears of War 2", Tag = "TPS", Rank = 3 },
+                new TopGame { Id = 4, Title = "Borderlands 2", Tag = "Looter Shooter", Rank = 4 },
+                new TopGame { Id = 5, Title = "Call of Duty: Black Ops II", Tag = "FPS", Rank = 5 },
+                new TopGame { Id = 6, Title = "The Witcher 3: Wild Hunt", Tag = "RPG", Rank = 6 },
+                new TopGame { Id = 7, Title = "Baldur's Gate 3", Tag = "CRPG", Rank = 7 },
+                new TopGame { Id = 8, Title = "Elden Ring", Tag = "Action RPG", Rank = 8 },
+                new TopGame { Id = 9, Title = "RimWorld", Tag = "Colony Sim", Rank = 9 },
+                new TopGame { Id = 10, Title = "Psychonauts", Tag = "Platformer", Rank = 10 }
             );
         }
     }
